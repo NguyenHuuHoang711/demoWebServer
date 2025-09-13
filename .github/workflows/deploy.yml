@@ -21,8 +21,9 @@ jobs:
           # tạo file config SSH ngay trong workflow
           cat >> ~/.ssh/config <<EOL
           Host asao
-              HostName ssh.asao.vn   
-              User ubuntu            
+              HostName ssh.asao.vn
+              ProxyCommand cloudflared access ssh --hostname %h   
+              User deployer            
               Port 22                
               IdentityFile ~/.ssh/id_rsa
           EOL
