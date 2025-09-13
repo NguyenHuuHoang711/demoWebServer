@@ -19,11 +19,11 @@ jobs:
 
       - name: Copy files to server
         run: |
-          rsync -avz --exclude '.git' ./ user@your-server:/srv/webdoluuniem/
+          rsync -avz --exclude '.git' ./ asao:/srv/webdoluuniem/
 
       - name: Build & restart Docker stack
         run: |
-          ssh user@your-server "
+          ssh asao "
             cd /srv/webdoluuniem &&
             docker-compose -t webdoluuniem_app . &&
             docker stack deploy -c docker-compose.yml webdoluuniem
