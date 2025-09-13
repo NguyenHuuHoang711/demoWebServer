@@ -1,65 +1,64 @@
+version: "3.9"
+
 services:
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: mydockerhubuser/webdoluuniem_backend:latest
     ports:
       - "8000:3001"
     volumes:
-      - ./backend:/app/backend
-      - /app/backend/node_modules
-      - ./backend/logs:/app/backend/logs
+      - backend_logs:/app/backend/logs
     environment:
-      - NODE_ENV=${NODE_ENV}
-      - MONGO_URL=${MONGO_URL}
-      - HOST=${HOST}
-      - PORT=${PORT}
-      - API_VERSION=${API_VERSION}
-      - JWT_SECRET=${JWT_SECRET}
-      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
-      - SENDGRID_FROM_EMAIL=${SENDGRID_FROM_EMAIL}
-      - PARTNER_CODE=${PARTNER_CODE}
-      - ACCESS_KEY=${ACCESS_KEY}
-      - SECRET_KEY=${SECRET_KEY}
-      - ENDPOINT=${ENDPOINT}
-      - RETURN_URL=${RETURN_URL}
-      - MEILISEARCH_HOST=${MEILISEARCH_HOST}
-      # - MEILISEARCH_API_KEY=${MEILISEARCH_API_KEY}
-    env_file:
-      - .env
-    depends_on:
-      - mongodb
-      - meilisearch
-  
+      NODE_ENV: "production"
+      MONGO_URL: "mongodb://mongodb:27017/mydb"
+      HOST: "0.0.0.0"
+      PORT: "3001"
+      API_VERSION: "v1"
+      MEILISEARCH_HOST: "http://meilisearch:7700"
+    secrets:
+      - jwt_secret
+      - sendgrid_api_key
+      - sendgrid_from_email
+      - partner_code
+      - access_key
+      - secret_key
+      - endpoint
+      - return_url
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        VITE_ADMIN_ID: ${VITE_ADMIN_ID} # lấy từ .env
-    container_name: frontend-app
+    image: mydockerhubuser/webdoluuniem_frontend:latest
     ports:
-      - "3000:80"   # Truy cập http://localhost:3000
-    restart: unless-stopped
+      - "3000:80"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
 
   nginx:
     image: nginx:latest
-    container_name: nginx-proxy
     ports:
       - "8080:8080"
     volumes:
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
-    depends_on:
-      - frontend
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
 
   mongodb:
     image: mongo:latest
-    container_name: mongodb
     ports:
       - "27018:27017"
     volumes:
       - mongodb_data:/data/db
     command: ["--replSet", "rs0"]
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
 
   mongors-init:
     image: mongo:latest
@@ -75,18 +74,40 @@ services:
             print(e.message)
           }'
       "
-    restart: "no"
+    deploy:
+      restart_policy:
+        condition: none
 
   meilisearch:
     image: getmeili/meilisearch:latest
-    container_name: meilisearch
     ports:
       - "7701:7700"
-    # environment:
-      # - MEILI_MASTER_KEY=${MEILISEARCH_API_KEY}
     volumes:
       - meili_data:/meili_data
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
 
 volumes:
+  backend_logs:
   mongodb_data:
   meili_data:
+
+secrets:
+  jwt_secret:
+    external: true
+  sendgrid_api_key:
+    external: true
+  sendgrid_from_email:
+    external: true
+  partner_code:
+    external: true
+  access_key:
+    external: true
+  secret_key:
+    external: true
+  endpoint:
+    external: true
+  return_url:
+    extern
