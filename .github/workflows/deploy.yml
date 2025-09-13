@@ -21,9 +21,9 @@ jobs:
           # tạo file config SSH ngay trong workflow
           cat >> ~/.ssh/config <<EOL
           Host asao
-              HostName ssh.asao.vn   # Cloudflare tunnel hostname (public qua cloudflared)
-              User ubuntu            # user SSH của bạn
-              Port 22                # port nếu khác thì đổi
+              HostName ssh.asao.vn   
+              User ubuntu            
+              Port 22                
               IdentityFile ~/.ssh/id_rsa
           EOL
 
