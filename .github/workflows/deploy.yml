@@ -32,7 +32,7 @@ jobs:
 
       - name: Copy files to server
         run: |
-          rsync -avz --exclude '.git' ./ asao:/srv/webdoluuniem/
+          rsync -avz --exclude '.git' ./ asao:/var/www/myapp/webdoluuniem/
 
       - name: Build & restart Docker stack
         run: |
