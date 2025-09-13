@@ -206,7 +206,7 @@ const handleCreateOrder = async () => {
         <div className="form-row">
           <div className="form-group1">
             <label><strong>Họ và tên</strong></label>
-            <input type="text" className="form-control" placeholder="Tên của bạn" />
+            <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Tên của bạn" required />
           </div>
         </div>
 
@@ -343,16 +343,41 @@ const handleCreateOrder = async () => {
 
 
         <h3>Phương thức thanh toán</h3>
-        <div className="lable">
-        <label><input type="radio" name="payment" defaultChecked onChange={(e)=>setSelectPayment(e.target.value)}/> Thanh toán khi nhận hàng (COD)</label>
-        <label><input type="radio" name="payment" onChange={(e)=>setSelectPayment(e.target.value)} /> Thanh toán qua Stripe</label>
-        <label><input type="radio" name="payment" onChange={(e)=>setSelectPayment(e.target.value)}/> Thanh toán qua PayPal</label>
-        <label><input type="radio" name="payment" onChange={(e)=>setSelectPayment(e.target.value)}/> Razorpay</label>
-        <label><input type="radio" name="payment" onChange={(e)=>setSelectPayment(e.target.value)}/> Paystack</label>
-        <label><input type="radio" name="payment" onChange={(e)=>setSelectPayment(e.target.value)}/> Mollie</label>
-        <label><input type="radio" name="payment" onChange={(e)=>setSelectPayment(e.target.value)}/> SSLCommerz</label>
-        <label><input type="radio" name="payment" onChange={(e)=>setSelectPayment(e.target.value)}/> Chuyển khoản ngân hàng</label>
+<div className="lable">
+  <label>
+    <input type="radio" name="payment" value="cod" defaultChecked onChange={(e) => setSelectPayment(e.target.value)} />
+    Thanh toán khi nhận hàng (COD)
+  </label>
+  <label>
+    <input type="radio" name="payment" value="stripe" onChange={(e) => setSelectPayment(e.target.value)} />
+    Thanh toán qua Stripe
+  </label>
+  <label>
+    <input type="radio" name="payment" value="paypal" onChange={(e) => setSelectPayment(e.target.value)} />
+    Thanh toán qua PayPal
+  </label>
+  <label>
+    <input type="radio" name="payment" value="razorpay" onChange={(e) => setSelectPayment(e.target.value)} />
+    Razorpay
+  </label>
+  <label>
+    <input type="radio" name="payment" value="paystack" onChange={(e) => setSelectPayment(e.target.value)} />
+    Paystack
+  </label>
+  <label>
+    <input type="radio" name="payment" value="mollie" onChange={(e) => setSelectPayment(e.target.value)} />
+    Mollie
+  </label>
+  <label>
+    <input type="radio" name="payment" value="sslcommerz" onChange={(e) => setSelectPayment(e.target.value)} />
+    SSLCommerz
+  </label>
+  <label>
+    <input type="radio" name="payment" value="bank" onChange={(e) => setSelectPayment(e.target.value)} />
+    Chuyển khoản ngân hàng
+  </label>
 </div>
+
         <div className="form-group">
           <label>Ghi chú đặt hàng</label>
           <textarea placeholder="Ví dụ: giao hàng giờ hành chính" />

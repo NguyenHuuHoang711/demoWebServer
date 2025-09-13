@@ -107,7 +107,12 @@ const CategoryPage: React.FC = () => {
       <div className="card" style={{ width: '250px' }}>
         <div className="image-wrapper">
           <Link to={`/product-detail/${p._id}`}>
-            <img src={p.images[0]?.image} alt={p.name} style={{ width: 200, height: 164 }} />
+            <img src={
+    p.images[0]?.image.startsWith('http') ||
+    p.images[0]?.image.startsWith('blob') ||
+    p.images[0]?.image.startsWith('data:image')
+      ? p.images[0]?.image
+      : `http://localhost:3001${p.images[0]?.image}`} alt={p.name} style={{ width: 200, height: 164 }} />
           </Link>
         </div>
         <div className="rating-line">

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useAutoRefreshToken } from "../../refreshAccessToken";
+import useAutoRefreshToken from "../../refreshAccessToken";
 import { FaPlus } from "react-icons/fa";
 import {CreateProductSuccess, DeleteProductSuccess, UpdateProductSuccess, ConfirmDeleteDialog} from '../../PaymentSuccess';
 

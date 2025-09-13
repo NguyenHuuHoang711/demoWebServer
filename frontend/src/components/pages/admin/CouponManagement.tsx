@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useAutoRefreshToken } from "../../refreshAccessToken";
+import useAutoRefreshToken from "../../refreshAccessToken";
 import {CreateProductSuccess, DeleteProductSuccess, UpdateProductSuccess, ConfirmDeleteDialog} from '../../PaymentSuccess';
 
 const CouponManagement = () => {
@@ -98,7 +98,9 @@ const CouponManagement = () => {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify(couponData),
+            body: JSON.stringify({code: couponData.code,
+  discount: couponData.discount,
+  expiry_date: couponData.expiryDate,}),
           }
         );
         const data = await response.json();
@@ -123,7 +125,6 @@ const CouponManagement = () => {
         });
         const data = await response.json();
         if (response.ok) {
-          alert("Thêm mã giảm giá thành công!");
           setCouponList((prev) => [...prev, data.data]);
           setShowCreateSuccess(true);
           handleCancel();
@@ -151,9 +152,6 @@ const CouponManagement = () => {
       return;
     }
 
-    const confirmDelete = window.confirm("Bạn có chắc chắn muốn xóa mã giảm giá này?");
-    if (!confirmDelete) return;
-
     try {
       const response = await fetch(`http://localhost:3001/api/v1/coupons/${pendingDelete}`, {
         method: "DELETE",
@@ -164,7 +162,6 @@ const CouponManagement = () => {
       });
       const data = await response.json();
       if (response.ok) {
-        alert("Đã xóa mã giảm giá thành công!");
         setCouponList((prev) => prev.filter((c) => c._id !== pendingDelete));
       } else {
         alert("Xóa mã giảm giá thất bại: " + (data.message || "Lỗi không xác định"));

@@ -3,6 +3,7 @@ import { FaPlus } from 'react-icons/fa';
 import "../../../assets/css/Dashboard.css";
 import { _descriptors } from "chart.js/helpers";
 import {CreateProductSuccess, DeleteProductSuccess, UpdateProductSuccess, ConfirmDeleteDialog} from '../../PaymentSuccess';
+import toast from 'react-hot-toast';
 
 const AdminEvents: React.FC = () => {
   const [productList, setProductList] = useState<any[]>([]);
@@ -103,8 +104,6 @@ const handleRemoveImage = (index: number) => {
   console.log('Sau khi xóa - images:', newImages);
 };
 
-
-
  // hàm mở form sửa sản phẩm 
   const handleEditEvent = (event: any) => {
     setEditingEvent({ ...event });
@@ -136,10 +135,14 @@ const handleRemoveImage = (index: number) => {
 
     try {
       const formData = new FormData();
+console.log("startDate:", newEvent.startDate);
+console.log("endDate:", newEvent.endDate);
+
       formData.append('name', newEvent.name);
       formData.append('description', newEvent.description);
-      formData.append('startDate', newEvent.startDate);
-      formData.append('endDate', newEvent.endDate);
+formData.append("startDate", new Date(newEvent.startDate).toISOString());
+formData.append("endDate", new Date(newEvent.endDate).toISOString());
+
     // 👇 Gửi file từ máy (blob)
       imageFiles.forEach((file) => {
         formData.append('image', file);
@@ -150,10 +153,11 @@ const handleRemoveImage = (index: number) => {
         formData.append('image', url); // Backend sẽ xử lý chuỗi URL
       });
 
+
+
       const res = await fetch("http://localhost:3001/api/v1/events", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: formData,
@@ -188,41 +192,46 @@ const handleUpdateEvent = async (editEvent: any) => {
     formData.append("description", editEvent.description);
     formData.append("startDate", editEvent.startDate);
     formData.append("endDate", editEvent.endDate);
-    formData.append("discount", editEvent.discount);
+    formData.append("discount", editEvent.discount.toString());
     formData.append("location", editEvent.location);
 
-    // 🧼 Gửi chỉ các ảnh hiện còn lại (sau khi đã xoá ở UI)
+    // Đính kèm ảnh (còn lại)
     images.forEach((img) => {
-      if (typeof img === 'string') {
-        formData.append('image', img);
+      if (typeof img === "string") {
+        formData.append("image", img);
       } else {
-        formData.append('image', img); // File object
+        formData.append("image", img);
       }
     });
 
-    // 🧠 Thêm dấu hiệu để backend hiểu: đây là ảnh mới, cần thay thế ảnh cũ (nếu backend hỗ trợ)
-    // Nếu không sửa backend thì chỉ cần backend override toàn bộ ảnh bằng mảng mới này
+    // **Thêm mảng products** đã cập nhật dưới dạng JSON
+    formData.append("products", JSON.stringify(editEvent.products));
 
-    const res = await fetch(`http://localhost:3001/api/v1/events/${editEvent._id}`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData,
-    });
+    const res = await fetch(
+      `http://localhost:3001/api/v1/events/${editEvent._id}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          // LƯU Ý: Không set Content-Type ở đây, fetch sẽ tự tạo boundary cho FormData
+        },
+        body: formData,
+      }
+    );
 
     const data = await res.json();
     console.log("📥 Phản hồi từ server:", data);
 
     if (res.ok) {
       setShowUpdateSuccess(true);
-      setAddingEvent(null);
-      fetchEvents(); // Làm mới danh sách
+      setEditingEvent(null);
+      fetchEvents(); // Tải lại danh sách sự kiện
     } else {
       alert("❌ Cập nhật thất bại: " + data.message);
     }
   } catch (error) {
     console.error("🚨 Lỗi cập nhật:", error);
+    alert("❌ Đã xảy ra lỗi khi cập nhật sự kiện.");
   }
 };
 
@@ -242,7 +251,6 @@ const handleUpdateEvent = async (editEvent: any) => {
     setImageFiles([]);  
     setImageLinks([]); 
   };
-
 
   const confirmDelete = (eventId: string) => {
   setPendingDelete(eventId);
@@ -312,7 +320,7 @@ const handleUpdateEvent = async (editEvent: any) => {
 
       const data = await res.json();
       if (res.ok) {
-        alert("✅ Đã thêm sản phẩm vào sự kiện!");
+        setShowCreateSuccess(true);
         setSubEventForm({ product: [], discount: "", startDate: "", endDate: "" });
         setExpandedEventId(null);
         fetchEvents();
@@ -324,6 +332,82 @@ const handleUpdateEvent = async (editEvent: any) => {
       alert("Lỗi kết nối.");
     }
   };
+
+  const groupProductsByTimeSlot = (products: any[]) => {
+    const grouped: Record<string, any[]> = {};
+
+    products.forEach((app) => {
+      const start = new Date(app.startDate);
+      const end = new Date(app.endDate);
+      const key = `${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+
+      if (!grouped[key]) {
+        grouped[key] = [];
+      }
+
+      grouped[key].push(app);
+    });
+
+    return grouped;
+  };
+
+// Xóa 1 mini-event
+const handleRemoveMiniEvent = async (miniEventId: string) => {
+  if (!editingEvent?._id) return;
+
+  try {
+    const res = await fetch(`http://localhost:3001/api/v1/events/${editingEvent._id}/products/${miniEventId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+
+    if (!res.ok) throw new Error('Xóa mini event thất bại');
+
+    toast.success('Đã xóa sản phẩm khỏi mini event');
+
+    // Cập nhật lại danh sách products trong state
+    setEditingEvent((prev: any) => ({
+      ...prev,
+      products: prev.products.filter((p: any) => p._id !== miniEventId),
+    }));
+  } catch (err) {
+    console.error(err);
+    alert('Đã xảy ra lỗi khi xóa mini event');
+  }
+};
+
+// Xóa cả slot giờ
+const handleRemoveTimeSlot = async (timeSlot: string) => {
+  const token = localStorage.getItem('token');
+
+  // Parse lại start/end từ timeSlot
+  const [start, end] = timeSlot.split(' - ');
+  const eventId = editingEvent._id;
+
+  try {
+    const res = await fetch(
+      `http://localhost:3001/api/v1/events/${eventId}/slots?start=${encodeURIComponent(
+        start
+      )}&end=${encodeURIComponent(end)}`,
+      {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!res.ok) throw new Error('Xóa slot thất bại');
+    toast.success('Đã xóa slot!');
+    fetchEvents(); // reload lại danh sách event
+  } catch (err) {
+    console.error(err);
+    toast.error('Xóa slot thất bại');
+  }
+};
 
   return (
   <div className="sp-section">
@@ -400,89 +484,89 @@ const handleUpdateEvent = async (editEvent: any) => {
           />
         </div>
 
-<div className="form-group">
-  <label>Hình ảnh:</label>
-  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-    {images.map((img, index) => (
-      <div key={index} style={{ position: 'relative' }}>
-        <img 
-          src={    
-            img.startsWith('http') ||
-            img.startsWith('blob')
-          ? img
-          : `http://localhost:3001${img}`}
-          alt={`Ảnh ${index + 1}`}
-          style={{
-            width: '80px',
-            height: '80px',
-            objectFit: 'cover',
-            borderRadius: '4px',
-          }}
-        />
-        <button
-          type="button"
-          onClick={() => handleRemoveImage(index)}
-          style={{
-            position: 'absolute',
-            top: '-5px',
-            right: '-5px',
-            background: 'red',
-            color: 'white',
-            border: 'none',
-            borderRadius: '50%',
-            width: '20px',
-            height: '20px',
-            cursor: 'pointer',
-          }}
-        >
-          x
-        </button>
+<div style={{ marginTop: 24 }}>
+  <h3 style={{ fontWeight: 'bold', marginBottom: 12 }}>Sản phẩm theo khung giờ</h3>
+  {editingEvent.products && Object.entries(groupProductsByTimeSlot(editingEvent.products)).map(
+    ([timeSlot, items]) => (
+      <div key={timeSlot} style={{ marginBottom: 20 }}>
+        {/* Tiêu đề khung giờ + nút xóa slot */}
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+          <div style={{
+              fontSize: 16, fontWeight: '500', color: '#333', flex: 1,
+            }}>
+            🕒 {timeSlot}
+          </div>
+        </div>
+
+        {/* Danh sách sản phẩm */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+          {items.map((app: any) => {
+            const prod = app.productId  ?? {};
+            const rawPrice = prod.price ?? 0;
+            const img = prod.images?.[0]?.image || prod.images?.[0] || '';
+            const src = img.startsWith('http')
+              ? img
+              : `http://localhost:3001${img}`;
+            const finalPrice = prod.price - (prod.price * Number(app.discount)) / 100;
+
+            return (
+              <div key={app._id} style={{
+                  width: 160,
+                  border: '1px solid #ddd',
+                  borderRadius: 6,
+                  overflow: 'hidden',
+                  position: 'relative',
+                  backgroundColor: '#fff',
+                }}
+              >
+                {/* nút xóa mini-event */}
+                <button
+                  onClick={() => handleRemoveMiniEvent(app._id)}
+                  style={{
+                    position: 'absolute',
+                    top: 4,
+                    right: 4,
+                    background: 'red',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: 20,
+                    height: 20,
+                    cursor: 'pointer',
+                    fontSize: 12,
+                    lineHeight: 1,
+                  }}
+                  title="Xóa sản phẩm này"
+                >
+                  ×
+                </button>
+
+                <img src={src} alt={prod.name} style={{
+                  width: '100%',
+                  height: 100,
+                  objectFit: 'cover',
+                }} />
+                <div style={{ padding: 8 }}>
+                  <div style={{ fontSize: 14, fontWeight: '500' }}>{prod.name}</div>
+                  <div style={{ fontSize: 12, color: '#666', margin: '4px 0' }}>
+                    Giá gốc: {rawPrice ? <del>{rawPrice.toLocaleString()}₫</del> : '—'}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#d32f2f' }}>
+                    Giảm còn: {finalPrice.toLocaleString()}₫ ({app.discount}%)
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
-    ))}
-  </div>
-
-  <div style={{ marginTop: '8px', display: 'flex', gap: '8px' }}>
-  {images.length < 100 && (
-    <>
-      <label
-        style={{
-          cursor: 'pointer',
-          background: '#eee',
-          padding: '6px 12px',
-          borderRadius: '4px',
-        }}
-      >
-        + Tải ảnh từ máy
-        <input
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={handleFileUpload}
-          style={{ display: 'none' }}
-        />
-      </label>
-
-      <button
-        type="button"
-        onClick={handleAddImageLink}
-        style={{
-          cursor: 'pointer',
-          background: '#eee',
-          padding: '6px 12px',
-          borderRadius: '4px',
-          border: 'none'
-        }}
-      >
-        + Thêm từ link
-      </button>
-    </>
+    )
   )}
 </div>
 
-</div>
-
-
         <div className="form-actions1">
+
+
           <button className="btn btn-success" onClick={()=>handleUpdateEvent(editingEvent)}>
             Cập nhật sự kiện
           </button>
@@ -605,20 +689,8 @@ const handleUpdateEvent = async (editEvent: any) => {
       
             </div>
         
-            <div className="form-group">
-          <label>Giảm giá (%):</label>
-          <input
-            type="number"
-            value={addingEvent?.discount || ''}
-            onChange={(e) =>
-              setAddingEvent({ ...addingEvent, discount: e.target.value })
-            }
-            placeholder="Nhập giảm giá"
-          />
-        </div>
-        
             <div className="form-actions1">
-           <button className="btn btn-success" onClick={handleSaveNewEvent}>
+           <button className="btn btn-success" onClick={() => handleSaveNewEvent(addingEvent)}>
           Thêm sản phẩm
         </button>
         

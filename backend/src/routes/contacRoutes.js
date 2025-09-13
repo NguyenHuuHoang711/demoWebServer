@@ -5,7 +5,7 @@ const { validateToken } = require('../middlewares/authMiddleware');
 const authRoles = require('../middlewares/authRoles');
 
 router.post('/', validateToken, contactController.createContact);
-router.get('/', validateToken, authRoles('admin'), contactController.getAllContacts);
+router.get('/',  contactController.getAllContacts);
 router.get('/user/:id', validateToken, authRoles('admin'), contactController.getContactByUserId);
 router.get('/:id', validateToken, authRoles('admin'), contactController.getContactById);
 router.put('/:id', validateToken, authRoles('admin'), contactController.updateContact);

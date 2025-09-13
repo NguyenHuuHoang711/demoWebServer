@@ -20,6 +20,7 @@ import CouponManagement from './admin/CouponManagement';
 import CategoryManagement from './admin/CategoryManagement';
 import ProductManagement from './admin/ProductManagement';
 import ReviewManagement from './admin/ReviewManager';
+import ContactManagement from './admin/contactAdmin';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
@@ -147,7 +148,14 @@ const Dashboard = () => {
             onClick={() => setActiveSection('reviews')}
             className={activeSection === 'reviews' ? 'menu-highlight active' : 'menu-highlight'}
           >
-            <Store size={18} /> Đánh giá sản phẩm
+            <Store size={18} /> Xếp hạng đánh giá sản phẩm
+          </div>
+
+          <div
+            onClick={() => setActiveSection('contacts')}
+            className={activeSection === 'contacts' ? 'menu-highlight active' : 'menu-highlight'}
+          >
+            💬 Góp ý khách hàng
           </div>
 
           <div onClick={handleLogout} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -172,6 +180,7 @@ const Dashboard = () => {
           {activeSection === 'events' && '🏷️ Quản lý sự kiện'}
           {activeSection === 'products' && '🛒 Quản lý sản phẩm'}
           {activeSection === 'reviews' && '🏪 Quản lý đánh giá'}
+          {activeSection === 'contacts' && '🏪 Quản lý đánh giá'}
         </h1>
 
         {/* Nội dung từng phần */}
@@ -252,6 +261,8 @@ const Dashboard = () => {
         {activeSection === 'chat' && isChatOpen && (
           <AdminChatComponent adminId={adminId} onClose={() => setIsChatOpen(false)} />
         )}
+        {activeSection === 'contacts' && <ContactManagement />}
+        
       </main>
     </div>
   );

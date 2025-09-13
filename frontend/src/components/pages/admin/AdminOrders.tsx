@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FiSearch, FiChevronDown, FiEye, FiCheck, FiArrowLeft, FiFileText } from 'react-icons/fi';
 import '../../../assets/css/Dashboard.css';
-import { useAutoRefreshToken } from '../../refreshAccessToken';
+import useAutoRefreshToken from '../../refreshAccessToken';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 

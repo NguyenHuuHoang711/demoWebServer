@@ -12,5 +12,6 @@ routes.get('/', eventController.getAllEvents);
 routes.get('/:id', eventController.getEventById);
 routes.put('/:id', dynamicImageUpload('events').array('image', 5), validateToken, authRoles('admin'), eventController.updateEvent);
 routes.delete('/:id', validateToken, authRoles('admin'), eventController.deleteEvent);
-
+routes.delete('/:eventId/products/:appId', validateToken, authRoles('admin'), eventController.removeMiniEvent);
+routes.delete('/:id/slots', validateToken, authRoles('admin'), eventController.removeTimeSlot);
 module.exports = routes;

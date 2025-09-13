@@ -1,0 +1,34 @@
+# Stage 1: Build
+FROM node:20-alpine AS build
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy toàn bộ source
+COPY . .
+
+# Build Vite (dùng biến môi trường build-time)
+# Có thể truyền VITE_ADMIN_ID khi build bằng:
+# docker build --build-arg VITE_ADMIN_ID=123 -t my-frontend .
+ARG VITE_ADMIN_ID
+ENV VITE_ADMIN_ID=$VITE_ADMIN_ID
+
+RUN npm run build
+
+# Stage 2: Serve với Nginx
+FROM nginx:alpine
+
+# Copy file build vào nginx
+COPY --from=build /app/dist /usr/share/nginx/html
+
+# Copy config nginx (tùy chọn)
+# COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

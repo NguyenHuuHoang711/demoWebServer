@@ -40,7 +40,7 @@ const OrderList: React.FC = () => {
   }, [userId]);
 
   if (loading) return <div>Đang tải đơn hàng...</div>;
-  if (error) return <div style={{ color: "red" }}>{error}</div>;
+  if (error) return <div style={{ color: "red" }}>vui lòng đăng nhập</div>;
   if (orders.length === 0) return <div>Không có đơn hàng nào.</div>;
 
   return (

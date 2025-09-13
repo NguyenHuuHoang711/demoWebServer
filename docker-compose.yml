@@ -4,7 +4,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "8000:3001"
     volumes:
       - ./backend:/app/backend
       - /app/backend/node_modules
@@ -24,13 +24,34 @@ services:
       - ENDPOINT=${ENDPOINT}
       - RETURN_URL=${RETURN_URL}
       - MEILISEARCH_HOST=${MEILISEARCH_HOST}
-      - MEILISEARCH_API_KEY=${MEILISEARCH_API_KEY}
+      # - MEILISEARCH_API_KEY=${MEILISEARCH_API_KEY}
     env_file:
       - .env
     depends_on:
       - mongodb
       - meilisearch
   
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_ADMIN_ID: ${VITE_ADMIN_ID} # lấy từ .env
+    container_name: frontend-app
+    ports:
+      - "3000:80"   # Truy cập http://localhost:3000
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx-proxy
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - frontend
+
   mongodb:
     image: mongo:latest
     container_name: mongodb
@@ -61,8 +82,8 @@ services:
     container_name: meilisearch
     ports:
       - "7701:7700"
-    environment:
-      - MEILI_MASTER_KEY=${MEILISEARCH_API_KEY}
+    # environment:
+      # - MEILI_MASTER_KEY=${MEILISEARCH_API_KEY}
     volumes:
       - meili_data:/meili_data
 

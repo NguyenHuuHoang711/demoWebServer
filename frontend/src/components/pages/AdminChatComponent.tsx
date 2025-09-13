@@ -78,19 +78,19 @@ const AdminChatComponent: React.FC<AdminChatComponentProps> = ({ adminId, onClos
       try {
         const data = await fetchWithAuth('/api/v1/chats');
         if (data.success) {
-          const filteredChats = data.chats.filter(chat => chat.user.some(u => u._id === adminId));
+          const filteredChats = data.chats.filter((chat:any) => chat.user.some((u: any) => u._id === adminId));
           setChats(filteredChats);
 
           // Fetch danh sách người dùng để làm giàu thông tin
           const usersResponse = await fetchWithAuth('/api/v1/users');
           if (usersResponse.success && Array.isArray(usersResponse.data)) {
-            const usersMap = new Map(usersResponse.data.map(user => [user._id, user]));
+            const usersMap = new Map(usersResponse.data.map((user: any) => [user._id, user]));
             setChats(prevChats =>
               prevChats.map(chat => ({
                 ...chat,
                 user: chat.user.map(u => ({
                   ...u,
-                  ...usersMap.get(u._id)
+                  ...usersMap.get(u._id) || {}
                 }))
               }))
             );

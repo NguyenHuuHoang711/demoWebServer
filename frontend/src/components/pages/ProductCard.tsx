@@ -76,13 +76,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       const previousLikeCount = likeCount;
       setIsLiked(!isLiked);
       setLikeCount(isLiked ? likeCount - 1 : likeCount + 1);
-      await queryClient.cancelQueries(['mostLikedProducts']);
+      await queryClient.cancelQueries({ queryKey: ['mostLikedProducts'] });
       return { previousIsLiked, previousLikeCount };
     },
     onSuccess: () => {
       setIsLiking(false);
-      queryClient.invalidateQueries(['mostLikedProducts']);
-      queryClient.invalidateQueries(['userLikes']);
+        queryClient.invalidateQueries({ queryKey: ['mostLikedProducts'] });
+        queryClient.invalidateQueries({ queryKey: ['userLikes'] });
     },
     onError: (err, _, context) => {
       setIsLiking(false);

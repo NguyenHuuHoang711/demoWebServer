@@ -5,63 +5,64 @@ const logger = require('../utils/logger');
 const { getReviewById } = require('./reviewController');
 
 const createEvent = async (req, res) => {
-    try {
-        const { name, description, startDate, endDate, discount, images, location } = req.body;
+  try {
+    const { name, description, startDate, endDate, discount, location } = req.body;
+    let imageLinks = req.body.imageLinks;
 
-        if (!name || !description || !startDate || !endDate ) {
-            logger.error('All fields are required');
-            return res.status(400).json({
-                success: false,
-                message: 'All fields are required'
-            });
-        }
-
-        // Ảnh upload từ máy
-            let uploadedImages = [];
-            if (req.files && req.files.length > 0) {
-              uploadedImages = req.files.map(file => `/uploads/events/${file.filename}`);
-            }
-        
-            // Ảnh từ link
-            let linkImages = [];
-            if (imageLinks) {
-              try {
-                linkImages = Array.isArray(imageLinks)
-                  ? imageLinks
-                  : JSON.parse(imageLinks); // nếu là JSON string
-              } catch (err) {
-                logger.warn('imageLinks is not valid JSON');
-              }
-            }
-        
-            const allImages = [...uploadedImages, ...linkImages];
-
-            
-        const event = await Event.create({
-            name,
-            description,
-            startDate,
-            endDate,
-            location,
-            discount,
-            images: allImages
-        });
-
-        logger.info(`Event created successfully with ID: ${event._id}`);
-        res.status(201).json({
-            success: true,
-            message: 'Event created successfully',
-            data: event
-        });
-    } catch (error) {
-        logger.error(`Error creating event: ${error.message}`);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to create event',
-            error: error.message
-        });
+    if (!name || !description || !startDate || !endDate) {
+      logger.error('All fields are required');
+      return res.status(400).json({
+        success: false,
+        message: 'All fields are required'
+      });
     }
-}
+
+    // Xử lý ảnh upload từ máy
+    let uploadedImages = [];
+    if (req.files && req.files.length > 0) {
+      uploadedImages = req.files.map(file => `/uploads/events/${file.filename}`);
+    }
+
+    // Xử lý ảnh từ link
+    let linkImages = [];
+    if (imageLinks) {
+      try {
+        linkImages = Array.isArray(imageLinks)
+          ? imageLinks
+          : JSON.parse(imageLinks);
+      } catch (err) {
+        logger.warn('imageLinks is not valid JSON');
+      }
+    }
+
+    const allImages = [...uploadedImages, ...linkImages];
+
+    const event = await Event.create({
+      name,
+      description,
+      startDate,
+      endDate,
+      location,
+      images: allImages
+    });
+
+    logger.info(`Event created successfully with ID: ${event._id}`);
+    res.status(201).json({
+      success: true,
+      message: 'Event created successfully',
+      data: event
+    });
+
+  } catch (error) {
+    logger.error(`Error creating event: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create event',
+      error: error.message
+    });
+  }
+};
+
 
 const getAllEvents = async (req, res) => {
   try {
@@ -325,6 +326,53 @@ const removeProductFromEvent = async (req, res) => {
     }
 }
 
+const removeMiniEvent = async (req, res) => {
+  const { eventId, appId } = req.params;
+  try {
+    const deleted = await ApplicableProduct.findOneAndDelete({ _id: appId, eventId });
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: 'Mini-event không tồn tại' });
+    }
+    await Event.findByIdAndUpdate(eventId, { $pull: { products: appId } });
+    const updatedEvent = await Event.findById(eventId).populate('products');
+    res.json({ success: true, message: 'Mini-event đã bị xóa', data: updatedEvent });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// controllers/eventController.ts
+const removeTimeSlot = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { start, end } = req.query;
+
+    if (!start || !end) {
+      return res.status(400).json({ message: 'Thiếu start hoặc end' });
+    }
+
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+
+    // Xoá tất cả mini-event thuộc event có start & end giống nhau
+    const deleted = await MiniEvent.deleteMany({
+      eventId: id,
+      startDate,
+      endDate,
+    });
+
+    res.status(200).json({
+      message: 'Đã xóa tất cả sản phẩm trong khung giờ',
+      deletedCount: deleted.deletedCount,
+    });
+  } catch (err) {
+    console.error('Lỗi xóa slot:', err);
+    res.status(500).json({ message: 'Lỗi máy chủ' });
+  }
+};
+
+
 module.exports = {
     createEvent,
     getAllEvents,
@@ -333,5 +381,7 @@ module.exports = {
     updateEvent,
     deleteEvent,
     addProductToEvent,
-    removeProductFromEvent
+    removeProductFromEvent,
+    removeMiniEvent,
+    removeTimeSlot
 };

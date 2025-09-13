@@ -183,7 +183,7 @@ const handleUpdateProduct = async () => {
 // Hàm xoá sản phẩm khỏi hệ thống (admin only)
 const handleDeleteProduct = async () => {
   if (!pendingDelete) return;
-
+  setShowConfirmDelete(false);
   const token = localStorage.getItem('token');
 
   if (!token) {
