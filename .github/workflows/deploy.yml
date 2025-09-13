@@ -12,10 +12,23 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+          # tạo file config SSH ngay trong workflow
+          cat >> ~/.ssh/config <<EOL
+          Host asao
+              HostName ssh.asao.vn   # Cloudflare tunnel hostname (public qua cloudflared)
+              User ubuntu            # user SSH của bạn
+              Port 22                # port nếu khác thì đổi
+              IdentityFile ~/.ssh/id_rsa
+          EOL
+
+          # disable strict host key checking (tránh prompt yes/no)
+          echo "StrictHostKeyChecking no" >> ~/.ssh/config
 
       - name: Copy files to server
         run: |
